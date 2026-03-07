@@ -1,14 +1,17 @@
-[
-  {
-    "id": "lamovie",
-    "name": "LaMovie",
-    "description": "Streams en Latino/Español desde LaMovie. Soporta GoodStream, StreamWish, VOE y Filemoon.",
-    "version": "1.0.0",
-    "author": "nuvio-user",
-    "supportedTypes": ["movie", "tv"],
-    "filename": "providers/lamovie.js",
-    "enabled": true,
-    "contentLanguage": ["es"],
-    "supportsExternalPlayer": true
-  }
-]
+{
+  "name": "Latino Providers",
+  "version": "1.0.0",
+  "scrapers": [
+    {
+      "id": "lamovie",
+      "name": "LaMovie",
+      "description": "Streams en Latino/Español desde LaMovie. GoodStream, StreamWish, VOE y Filemoon.",
+      "version": "1.0.0",
+      "author": "KennethJYS",
+      "supportedTypes": ["movie", "tv"],
+      "filename": "providers/lamovie.js",
+      "enabled": true,
+      "contentLanguage": ["es"]
+    }
+  ]
+}
