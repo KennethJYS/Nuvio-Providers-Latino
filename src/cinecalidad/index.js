@@ -137,7 +137,6 @@ async function searchCinecalidad(query) {
   try {
     const { data } = await axios.get(url, { timeout: 8000, headers: HEADERS });
 
-    // Extraer artículos — cada película está en un <article>
     const articles = [];
     let pos = 0;
     while (true) {
@@ -151,21 +150,22 @@ async function searchCinecalidad(query) {
 
     const results = [];
     for (const article of articles) {
-      // URL de la película
-      const hrefMatch = article.match(/href="([^"]+)"/);
+      // Saltar series
+      if (article.includes('/serie/')) continue;
+
+      // URL desde <a class="absolute top-0 left-0 ... href="...">
+      const hrefMatch = article.match(/class="absolute top-0[^"]*"[^>]+href="([^"]+)"/);
       if (!hrefMatch) continue;
       const movieUrl = hrefMatch[1];
-      if (!movieUrl.includes(HOST) && !movieUrl.startsWith('/')) continue;
 
-      // Título desde el alt o title de la imagen
-      const titleMatch = article.match(/(?:alt|title)="([^"]+)"/);
+      // Título desde <span class="sr-only">...</span>
+      const titleMatch = article.match(/<span class="sr-only">([^<]+)<\/span>/);
       if (!titleMatch) continue;
-      let title = titleMatch[1].trim();
+      const title = titleMatch[1].trim();
 
-      // Limpiar año del título si viene junto
-      const yearMatch = title.match(/\((\d{4})\)/);
+      // Año desde el primer div de texto
+      const yearMatch = article.match(/>\s*(\d{4})\s*<\/div>/);
       const year = yearMatch ? yearMatch[1] : '';
-      title = title.replace(/\s*\(\d{4}\)/, '').trim();
 
       results.push({ url: movieUrl, title, year });
     }
@@ -199,61 +199,43 @@ async function getEmbedUrls(movieUrl) {
   try {
     const { data } = await axios.get(movieUrl, { timeout: 8000, headers: HEADERS });
 
-    // Buscar todos los <a class="inline-block" data-url="BASE64">
     const embedLinks = [];
     const regex = /class="[^"]*inline-block[^"]*"[^>]+data-url="([^"]+)"/g;
     let match;
-    while ((match = regex.exec(data)) !== null) {
-      embedLinks.push(match[1]);
-    }
+    while ((match = regex.exec(data)) !== null) embedLinks.push(match[1]);
 
-    // También buscar data-src en formato base64
     const regex2 = /data-src="([A-Za-z0-9+/=]{20,})"/g;
-    while ((match = regex2.exec(data)) !== null) {
-      embedLinks.push(match[1]);
-    }
+    while ((match = regex2.exec(data)) !== null) embedLinks.push(match[1]);
 
-    console.log(`[CineCalidad] ${embedLinks.length} enlaces encontrados en página`);
+    // Deduplicar URLs decodificadas antes de fetchear
+    const decodedUrls = [...new Set(
+      embedLinks
+        .map(b64 => b64decode(b64))
+        .filter(url => url && url.startsWith('http'))
+    )];
 
-    // Decodificar cada base64 → obtener URL intermedia → obtener embed final
-    const embedUrls = [];
-    await Promise.allSettled(embedLinks.map(async (b64) => {
+    console.log(`[CineCalidad] ${decodedUrls.length} URLs intermedias únicas`);
+
+    const embedUrls = new Set();
+    await Promise.allSettled(decodedUrls.map(async (decoded) => {
       try {
-        const decoded = b64decode(b64);
-        if (!decoded || !decoded.startsWith('http')) return;
-
-        // Fetch URL intermedia → div#btn_enlace a href
         const { data: midData } = await axios.get(decoded, {
-          timeout: 6000,
-          headers: HEADERS,
-          maxRedirects: 5,
+          timeout: 6000, headers: HEADERS, maxRedirects: 5,
         });
 
-        // Buscar el enlace final
         let finalUrl = '';
-
-        // Patrón 1: div#btn_enlace
         const btnMatch = midData.match(/id="btn_enlace"[^>]*>[\s\S]*?href="([^"]+)"/);
         if (btnMatch) finalUrl = btnMatch[1];
-
-        // Patrón 2: iframe src directo
         if (!finalUrl) {
           const iframeMatch = midData.match(/<iframe[^>]+src="([^"]+)"/);
           if (iframeMatch) finalUrl = iframeMatch[1];
         }
-
-        // Patrón 3: la URL decoded ya es el embed directamente
         if (!finalUrl && decoded.includes('/e/')) finalUrl = decoded;
-
-        if (finalUrl && finalUrl.startsWith('http')) {
-          embedUrls.push(finalUrl);
-        }
-      } catch (e) {
-        // silencio — este embed no disponible
-      }
+        if (finalUrl && finalUrl.startsWith('http')) embedUrls.add(finalUrl);
+      } catch (e) {}
     }));
 
-    return embedUrls;
+    return [...embedUrls];
   } catch (e) {
     console.log(`[CineCalidad] Error obteniendo embeds: ${e.message}`);
     return [];
@@ -272,7 +254,6 @@ async function processEmbed(embedUrl) {
     }
 
     const serverName = getServerName(embedUrl);
-    console.log(`[${serverName}] Resolviendo: ${embedUrl}`);
 
     const result = await resolver(embedUrl);
     if (!result || !result.url) return null;
@@ -343,14 +324,18 @@ export async function getStreams(tmdbId, mediaType, season, episode) {
 
     // 4. Resolver todos en paralelo con timeout global
     const RESOLVER_TIMEOUT = 5000;
+    const uniqueEmbeds = [...new Set(embedUrls)];
+    console.log(`[CineCalidad DEBUG] uniqueEmbeds length: ${uniqueEmbeds.length}`, uniqueEmbeds);
     const streams = await new Promise((resolve) => {
       const results = [];
       let completed = 0;
-      const total = embedUrls.length;
+      const total = uniqueEmbeds.length;
       const finish = () => resolve(results.filter(Boolean));
       const timer = setTimeout(finish, RESOLVER_TIMEOUT);
 
-      embedUrls.forEach(url => {
+      console.log(`[CineCalidad DEBUG] embedUrls: ${JSON.stringify([...embedUrls])}`);
+      uniqueEmbeds.forEach((url, i) => {
+        console.log(`[CineCalidad DEBUG] forEach item ${i}: ${url}`);
         processEmbed(url).then(result => {
           if (result) results.push(result);
           completed++;
