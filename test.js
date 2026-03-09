@@ -33,3 +33,4 @@ getStreams(tmdbId, mediaType, season, episode)
   .catch(e => {
     console.error('Error:', e.message);
   });
+
