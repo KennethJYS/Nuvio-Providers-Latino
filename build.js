@@ -43,7 +43,7 @@ async function buildProvider(name) {
 }
 
 async function main() {
-  const providerNames = filteredArgs.length > 0 ? filteredArgs : ['lamovie', 'cinecalidad'];
+  const providerNames = filteredArgs.length > 0 ? filteredArgs : ['lamovie', 'cinecalidad','embed69'];
 
   for (const name of providerNames) {
     await buildProvider(name);

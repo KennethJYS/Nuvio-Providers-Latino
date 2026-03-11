@@ -1,6 +1,6 @@
 {
   "name": "Latino Providers",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "scrapers": [
     {
       "id": "lamovie",
@@ -21,6 +21,17 @@
       "author": "KennethJYS",
       "supportedTypes": ["movie"],
       "filename": "providers/cinecalidad.js",
+      "enabled": true,
+      "contentLanguage": ["es"]
+    },
+    {
+      "id": "embed69",
+      "name": "Embed69",
+      "description": "Streams en Latino/Español/Subtitulado desde Embed69. StreamWish, VOE y Filemoon.",
+      "version": "1.0.0",
+      "author": "KennethJYS",
+      "supportedTypes": ["movie", "tv"],
+      "filename": "providers/embed69.js",
       "enabled": true,
       "contentLanguage": ["es"]
     }
