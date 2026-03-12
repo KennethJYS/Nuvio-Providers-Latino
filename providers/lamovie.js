@@ -43,7 +43,7 @@ var N = $(require("axios"));
 var ne = $(require("axios"));
 var oe = $(require("axios"));
 var xe = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
-function z(e, t) {
+function I(e, t) {
   return e >= 3840 || t >= 2160 ? "4K" : e >= 1920 || t >= 1080 ? "1080p" : e >= 1280 || t >= 720 ? "720p" : e >= 854 || t >= 480 ? "480p" : "360p";
 }
 function A(o) {
@@ -63,7 +63,7 @@ function A(o) {
           c > s && (s = c, r = u);
         }
       }
-      return s > 0 ? z(r, s) : "1080p";
+      return s > 0 ? I(r, s) : "1080p";
     } catch (n) {
       return "1080p";
     }
@@ -115,7 +115,7 @@ function Me(e, t) {
     return console.log("[VOE] voeDecode error:", o.message), null;
   }
 }
-function I(o) {
+function z(o) {
   return m(this, arguments, function* (e, t = {}) {
     return ae.default.get(e, { timeout: 15e3, maxRedirects: 5, headers: F({ "User-Agent": Ee, Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" }, t), validateStatus: (n) => n < 500 });
   });
@@ -124,12 +124,12 @@ function le(e) {
   return m(this, null, function* () {
     try {
       console.log(`[VOE] Resolviendo: ${e}`);
-      let t = yield I(e, { Referer: e }), o = String(t && t.data ? t.data : "");
+      let t = yield z(e, { Referer: e }), o = String(t && t.data ? t.data : "");
       if (/permanentToken/i.test(o)) {
         let l = o.match(/window\.location\.href\s*=\s*'([^']+)'/i);
         if (l) {
           console.log(`[VOE] Permanent token redirect -> ${l[1]}`);
-          let u = yield I(l[1], { Referer: e });
+          let u = yield z(l[1], { Referer: e });
           u && u.data && (o = String(u.data));
         }
       }
@@ -137,7 +137,7 @@ function le(e) {
       if (n) {
         let l = n[1], u = n[2].startsWith("http") ? n[2] : new URL(n[2], e).href;
         console.log(`[VOE] Found encoded array + loader: ${u}`);
-        let c = yield I(u, { Referer: e }), p = c && c.data ? String(c.data) : "", f = p.match(/(\[(?:'[^']{1,10}'[\s,]*){4,12}\])/i) || p.match(/(\[(?:"[^"]{1,10}"[,\s]*){4,12}\])/i);
+        let c = yield z(u, { Referer: e }), p = c && c.data ? String(c.data) : "", f = p.match(/(\[(?:'[^']{1,10}'[\s,]*){4,12}\])/i) || p.match(/(\[(?:"[^"]{1,10}"[,\s]*){4,12}\])/i);
         if (f) {
           let d = Me(l, f[1]);
           if (d && (d.source || d.direct_access_url)) {
@@ -264,7 +264,7 @@ function D(e) {
               }
             }
           }
-          k > 0 && (x = X, E = z(K, k), console.log(`[Filemoon] Mejor calidad: ${E}`));
+          k > 0 && (x = X, E = I(K, k), console.log(`[Filemoon] Mejor calidad: ${E}`));
         } catch (y) {
           console.log(`[Filemoon] No se pudo parsear master: ${y.message}`);
         }
@@ -399,10 +399,10 @@ function de(e, t) {
   let o = e.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9\s-]/g, " ").replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
   return t ? `${o}-${t}` : o;
 }
-function ze(e, t, o) {
+function Ie(e, t, o) {
   return e === "movie" ? ["peliculas"] : (t || []).includes(ke) ? (o || []).some((s) => Oe.includes(s)) ? ["animes"] : ["animes", "series"] : ["series"];
 }
-function Ie(e, t) {
+function ze(e, t) {
   return m(this, null, function* () {
     var n;
     let o = [{ lang: "es-MX", name: "Latino" }, { lang: "en-US", name: "Ingl\xE9s" }];
@@ -418,7 +418,7 @@ function Ie(e, t) {
     return null;
   });
 }
-var He = { "User-Agent": ge, Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language": "es-MX,es;q=0.9", "Accept-Encoding": "gzip, deflate, br", Connection: "keep-alive", "Upgrade-Insecure-Requests": "1" };
+var He = { "User-Agent": ge, Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language": "es-MX,es;q=0.9", Connection: "keep-alive", "Upgrade-Insecure-Requests": "1" };
 function Ve(e) {
   let t = e.match(/rel=['"]shortlink['"]\s+href=['"][^'"]*\?p=(\d+)['"]/);
   return t ? t[1] : null;
@@ -436,7 +436,7 @@ function me(e, t) {
 }
 function Be(e, t) {
   return m(this, null, function* () {
-    let { title: o, originalTitle: n, year: r, genres: s, originCountries: i } = e, a = ze(t, s, i), l = [];
+    let { title: o, originalTitle: n, year: r, genres: s, originCountries: i } = e, a = Ie(t, s, i), l = [];
     o && l.push(de(o, r)), n && n !== o && l.push(de(n, r));
     for (let u of l)
       if (a.length === 1) {
@@ -490,7 +490,7 @@ function je(e, t, o, n) {
     let r = Date.now();
     console.log(`[LaMovie] Buscando: TMDB ${e} (${t})${o ? ` S${o}E${n}` : ""}`);
     try {
-      let i = yield Ie(e, t);
+      let i = yield ze(e, t);
       if (!i)
         return [];
       let a = yield Be(i, t);

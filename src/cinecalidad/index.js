@@ -15,7 +15,6 @@ const HEADERS = {
   'User-Agent': UA,
   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   'Accept-Language': 'es-MX,es;q=0.9',
-  'Accept-Encoding': 'gzip, deflate, br',
   'Connection': 'keep-alive',
   'Upgrade-Insecure-Requests': '1',
   'Referer': 'https://www.cinecalidad.vg/',
@@ -36,6 +35,20 @@ const RESOLVERS = {
 // ============================================================================
 // UTILIDADES
 // ============================================================================
+const normalizeText = (text) =>
+  text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+const calculateSimilarity = (str1, str2) => {
+  const s1 = normalizeText(str1);
+  const s2 = normalizeText(str2);
+  if (s1 === s2) return 1.0;
+  if (s1.includes(s2) || s2.includes(s1)) return 0.8;
+  const words1 = new Set(s1.split(/\s+/));
+  const words2 = new Set(s2.split(/\s+/));
+  const intersection = [...words1].filter(w => words2.has(w));
+  return intersection.length / Math.max(words1.size, words2.size);
+};
+
 const getServerName = (url) => {
   if (url.includes('goodstream'))  return 'GoodStream';
   if (url.includes('hlswish') || url.includes('streamwish') || url.includes('strwish')) return 'StreamWish';
