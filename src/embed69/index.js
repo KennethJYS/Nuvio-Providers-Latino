@@ -6,6 +6,7 @@ import axios from 'axios';
 import { resolve as resolveVoe } from '../resolvers/voe.js';
 import { resolve as resolveFilemoon } from '../resolvers/filemoon.js';
 import { resolve as resolveHlswish } from '../resolvers/hlswish.js';
+import { resolve as resolveVidhide } from '../resolvers/vidhide.js';
 
 // ============================================================================
 // CONFIGURACIÓN
@@ -28,6 +29,8 @@ const RESOLVER_MAP = {
   'filemoon.sx':      resolveFilemoon,
   'filemoon.to':      resolveFilemoon,
   'moonembed.pro':    resolveFilemoon,
+  'dintezuvio.com':   resolveVidhide,   // vidhide
+  'vidhide.com':      resolveVidhide,
 };
 
 const SERVER_LABELS = {
