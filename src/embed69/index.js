@@ -105,8 +105,9 @@ async function getImdbId(tmdbId, mediaType) {
 // Construye la URL de embed69 según tipo de contenido
 function buildEmbedUrl(imdbId, mediaType, season, episode) {
   if (mediaType === 'movie') return `${BASE_URL}/f/${imdbId}`;
-  // Series: /f/{imdb_id}/{season}/{episode}
-  return `${BASE_URL}/f/${imdbId}/${season}/${episode}`;
+  // Series: /f/{imdb_id}-{season}x{episode} ej: tt1520211-1x01
+  const e = String(episode).padStart(2, '0');
+  return `${BASE_URL}/f/${imdbId}-${parseInt(season)}x${e}`;
 }
 
 // ============================================================================

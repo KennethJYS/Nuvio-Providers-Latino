@@ -26,6 +26,9 @@ const RESOLVERS = {
   'vimeos.net': resolveVimeos,
 };
 
+// Servidores ignorados (anti-bot fuerte, sin resolver viable)
+const IGNORED_HOSTS = [];
+
 // ============================================================================
 // UTILIDADES
 // ============================================================================
@@ -33,10 +36,15 @@ const normalizeText = (text) =>
   text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
 const calculateSimilarity = (str1, str2) => {
-  const s1 = normalizeText(str1);
-  const s2 = normalizeText(str2);
+  // Stripear año entre paréntesis antes de comparar: "The Walking Dead (2010)" → "The Walking Dead"
+  const s1 = normalizeText(str1).replace(/\s*\(\d{4}\)\s*$/, '').trim();
+  const s2 = normalizeText(str2).replace(/\s*\(\d{4}\)\s*$/, '').trim();
   if (s1 === s2) return 1.0;
-  if (s1.includes(s2) || s2.includes(s1)) return 0.8;
+  if (s1.includes(s2) || s2.includes(s1)) {
+    // Penalizar por palabras extra: "Fear the Walking Dead" no debería ganarle a "The Walking Dead"
+    const lenRatio = Math.min(s1.length, s2.length) / Math.max(s1.length, s2.length);
+    return 0.8 * lenRatio;
+  }
   const words1 = new Set(s1.split(/\s+/));
   const words2 = new Set(s2.split(/\s+/));
   const intersection = [...words1].filter(w => words2.has(w));
@@ -63,10 +71,13 @@ const getServerName = (url) => {
 };
 
 const getResolver = (url) => {
-  if (!url || !url.startsWith('http')) return null;
-  for (const pattern in RESOLVERS) {
-    if (url.includes(pattern)) return RESOLVERS[pattern];
-  }
+  try {
+    const host = new URL(url).hostname.replace('www.', '');
+    if (IGNORED_HOSTS.some(h => url.includes(h))) return null;
+    for (const [pattern, resolver] of Object.entries(RESOLVERS)) {
+      if (url.includes(pattern)) return resolver;
+    }
+  } catch (e) {}
   return null;
 };
 
@@ -74,32 +85,32 @@ const getResolver = (url) => {
 // TMDB
 // ============================================================================
 async function getTmdbData(tmdbId, mediaType) {
-  const fetchTmdb = async (lang, name) => {
-    const url = `https://api.themoviedb.org/3/${mediaType}/${tmdbId}?api_key=${TMDB_API_KEY}&language=${lang}`;
-    const { data } = await axios.get(url, { timeout: 5000, headers: HEADERS });
-    const title = mediaType === 'movie' ? data.title : data.name;
-    const originalTitle = mediaType === 'movie' ? data.original_title : data.original_name;
-    if (!title) throw new Error('No title');
-    if (lang === 'es-MX' && /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/.test(title)) throw new Error('Japanese title');
-    return { title, originalTitle, year: (data.release_date || data.first_air_date || '').substring(0, 4) };
-  };
+  const attempts = [
+    { lang: 'es-MX', name: 'Latino' },
+    { lang: 'en-US', name: 'Inglés' },
+    { lang: 'es-ES', name: 'España' }
+  ];
 
-  // Lanzar las 3 en paralelo pero priorizar Latino
-  const [latino, ingles, espana] = await Promise.allSettled([
-    fetchTmdb('es-MX', 'Latino'),
-    fetchTmdb('en-US', 'Inglés'),
-    fetchTmdb('es-ES', 'España'),
-  ]);
+  for (const { lang, name } of attempts) {
+    try {
+      const url = `https://api.themoviedb.org/3/${mediaType}/${tmdbId}?api_key=${TMDB_API_KEY}&language=${lang}`;
+      const { data } = await axios.get(url, { timeout: 5000, headers: HEADERS });
+      const title = mediaType === 'movie' ? data.title : data.name;
+      const originalTitle = mediaType === 'movie' ? data.original_title : data.original_name;
 
-  const result = latino.status === 'fulfilled' ? latino.value
-               : ingles.status === 'fulfilled' ? ingles.value
-               : espana.status === 'fulfilled' ? espana.value
-               : null;
+      if (lang === 'es-MX' && /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/.test(title)) continue;
 
-  if (result) {
-    console.log(`[LaMovie] TMDB: "${result.title}"${result.title !== result.originalTitle ? ` | Original: "${result.originalTitle}"` : ''}`);
+      console.log(`[LaMovie] TMDB (${name}): "${title}"${title !== originalTitle ? ` | Original: "${originalTitle}"` : ''}`);
+      return {
+        title,
+        originalTitle,
+        year: (data.release_date || data.first_air_date || '').substring(0, 4),
+      };
+    } catch (e) {
+      console.log(`[LaMovie] Error TMDB ${name}: ${e.message}`);
+    }
   }
-  return result;
+  return null;
 }
 
 // ============================================================================
@@ -200,9 +211,9 @@ async function processEmbed(embed) {
 
     return {
       name: 'LaMovie',
-      title: `${result.quality || '1080p'} · ${serverName}`,
+      title: `${quality} · ${serverName}`,
       url: result.url,
-      quality: result.quality || '1080p',
+      quality,
       headers: result.headers || {}
     };
   } catch (e) {
