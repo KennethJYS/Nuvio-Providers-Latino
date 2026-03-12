@@ -1,6 +1,6 @@
 {
   "name": "Latino Providers",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "scrapers": [
     {
       "id": "lamovie",
@@ -32,6 +32,17 @@
       "author": "KennethJYS",
       "supportedTypes": ["movie", "tv"],
       "filename": "providers/embed69.js",
+      "enabled": true,
+      "contentLanguage": ["es"]
+    },
+    {
+      "id": "zoowomaniacos",
+      "name": "Zoowomaniacos",
+      "description": "Películas de culto, cine de autor y difíciles de encontrar. OkRu.",
+      "version": "1.0.0",
+      "author": "KennethJYS",
+      "supportedTypes": ["movie"],
+      "filename": "providers/zoowomaniacos.js",
       "enabled": true,
       "contentLanguage": ["es"]
     }
