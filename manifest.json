@@ -45,6 +45,17 @@
       "filename": "providers/zoowomaniacos.js",
       "enabled": true,
       "contentLanguage": ["es"]
+    },
+    {
+      "id": "xupalace",
+      "name": "Xupalace",
+      "description": "Streams en Latino desde Xupalace. StreamWish, VOE, Filemoon, Vidhide.",
+      "version": "1.0.0",
+      "author": "KennethJYS",
+      "supportedTypes": ["movie", "tv"],
+      "filename": "providers/xupalace.js",
+      "enabled": true,
+      "contentLanguage": ["es"]
     }
   ]
 }
