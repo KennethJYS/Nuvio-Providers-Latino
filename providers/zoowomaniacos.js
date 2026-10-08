@@ -101,7 +101,7 @@ function resolve(embedUrl) {
     }
   });
 }
-var TMDB_API_KEY = "439c478a771f35c05022f9feabcca01c";
+var TMDB_API_KEY = process.env.TMDB_API_KEY;
 var BASE_URL = "https://proyectox.yoyatengoabuela.com";
 var UA2 = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
 var HEADERS = {
